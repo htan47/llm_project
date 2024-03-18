@@ -1,0 +1,65 @@
+---
+title: "clean_YS"
+output: html_document
+date: "2024-03-10"
+---
+
+```{r setup}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+## R Markdown
+```{r}
+# read raw data in from 2018_data.csv
+full_2018 = read.csv("~/Desktop/2018_data.csv") %>%
+  select(FORMULA, PROPERTY..YS..MPa.) %>%
+  drop_na() %>%
+  mutate(is_numeric = !is.na(as.numeric(PROPERTY..YS..MPa.))) %>%
+  filter(is_numeric) %>%
+  mutate(YS=as.numeric(PROPERTY..YS..MPa.)) %>%
+  select(-c(is_numeric, PROPERTY..YS..MPa.))
+
+# read raw data in from 2019_data.csv
+full_2019 = read.csv("~/Desktop/2019_data.csv") %>%
+  select(FORMULA, PROPERTY..YS..MPa.) %>%
+  drop_na() %>%
+  mutate(is_numeric = !is.na(as.numeric(PROPERTY..YS..MPa.))) %>%
+  filter(is_numeric) %>%
+  mutate(YS=as.numeric(PROPERTY..YS..MPa.)) %>%
+  select(-c(is_numeric, PROPERTY..YS..MPa.))
+
+# get a list of the compounds that contains only one entry in the 2018 dataset
+unique_2018 = full_2018 %>%
+  group_by(FORMULA) %>%
+  summarize(count = n()) %>%
+  filter(count==1)
+
+# get a list of the compounds that contains only one entry in the 2019 dataset
+unique_2019 = full_2019 %>%
+  group_by(FORMULA) %>%
+  summarize(count = n()) %>%
+  filter(count==1)
+
+# get the YS that compounds contains only one entry in the 2018 dataset
+YS_2018 = unique_2018 %>%
+  left_join(full_2018, by='FORMULA') %>%
+  select(-count)
+
+# get the YS that compounds contains only one entry in the 2019 dataset
+YS_2019 = unique_2019 %>%
+  left_join(full_2019, by='FORMULA') %>%
+  select(-count)
+  
+# combine datasets from those two years and delete the entrys that have duplicated
+total_YS = full_join(YS_2018, YS_2019) 
+total_YS = total_YS %>%
+  group_by(FORMULA) %>%
+  mutate(count = n()) %>%
+  filter(count == 1) %>%
+  select(-count)
+
+write.csv(total_YS, file = "clean_YS_GTD.csv", row.names = FALSE)
+```
+
+

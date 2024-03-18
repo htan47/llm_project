@@ -1,0 +1,33 @@
+---
+title: "clean_off"
+output: html_document
+date: "2024-03-17"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r setup, include=F, echo=F}
+library("readxl")
+library(dplyr) 
+library(tidyverse) 
+```
+
+```{r}
+orig_df <- read_excel("YieldStrength_HEAs_database_MPPolak_DMorgan.xlsx")
+orig_df = orig_df %>%
+  filter(grepl('high entropy alloys', tolower(passage))) %>%
+  mutate(is_numeric = !is.na(as.numeric(value))) %>%
+  filter(is_numeric) %>%
+  mutate(value = as.numeric(value)) %>%
+  mutate(value = case_when(
+    unit == "MPa" ~ value,
+    unit == "GPa" ~ value*1000,
+    .default = value
+  )) %>%
+  select(material, value, passage)
+
+write.csv(orig_df, file = "yield_strength_GTD.csv", row.names = FALSE)
+```
+
